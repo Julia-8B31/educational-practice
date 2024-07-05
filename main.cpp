@@ -4,27 +4,35 @@ using namespace sf;
 
 int main()
 {
-	RenderWindow window(VideoMode(500, 500), "Picture!");
+    RenderWindow window(sf::VideoMode(1280, 720), L"Endless runner");
+    
 
-	Texture Picture;
-	Picture.loadFromFile("C:/Users/ula-a/OneDrive/Документы/Летняя практика 2024/foto/небо фон.png");
-	Sprite Sprite1(Picture);
+    Texture textureSpace;
+    textureSpace.loadFromFile("D:/Programming/project5/foto/sky.png");
+    RectangleShape gamingBckground(Vector2f(1280,720));
+    gamingBckground.setTexture(&textureSpace);
 
-	Sprite1.setPosition(100, 50);
+    RectangleShape gamingBckground2(Vector2f(1280,720));
+    gamingBckground2.setTexture(&textureSpace);
+    gamingBckground2.setPosition(Vector2f(1280,720));
+    
+    Vector2f pos;
+    Clock clock;
+    float time;
 
-	while (window.isOpen())
-	{
-		Event event;
-		while (window.pollEvent(event))
-		{
-			if (event.type == Event::Closed)
-					window.close();
-		}
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+        
+        window.clear();
+        
+        window.display();
+    }
 
-		window.clear(Color::White);
-		window.draw(Sprite1);
-		window.display();
-	}
-
-	return 0;
+    return 0;
 }
