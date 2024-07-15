@@ -13,7 +13,7 @@ public:
 
     Coin() {
         shape.setSize(Vector2f(120, 60));
-        textureCoin.loadFromFile("D:/Programming/project5/foto/coin.png");
+        textureCoin.loadFromFile("D:/Programming/project5/foto/coinn.png");
         shape.setTexture(&textureCoin);
         collected = false;
     }
@@ -23,15 +23,34 @@ public:
     }
 };
 
+class CoinCollector {
+private:
+    int coinsCollected;
+
+public:
+    CoinCollector() {
+        coinsCollected = 0;
+    }
+
+    void collectCoin() {
+        coinsCollected++;
+    }
+
+    int getCoinsCollected() {
+        return coinsCollected;
+    }
+};
+
 
 
 int main()
 {   
+    RenderWindow window(VideoMode(1280, 720), L"Endless runner");
+    
+    int coinsCollected = 0; // добавление collected coins
+     
 
-    
-    RenderWindow window(sf::VideoMode(1280, 720), L"Endless runner");
-    
-    //ФОН
+    // Background
     Texture textureSpace;
     textureSpace.loadFromFile("D:/Programming/project5/foto/sky.png");
     RectangleShape gamingBckground(Vector2f(1280,720));
@@ -41,34 +60,24 @@ int main()
     gamingBckground2.setTexture(&textureSpace);
     gamingBckground2.setPosition(Vector2f(1280,0));
 
-
-    // ДОРОГА
+    // Road
     RectangleShape road(Vector2f(1280, 100));
     Texture textureRoad;
     textureRoad.loadFromFile("D:/Programming/project5/foto/road.png");
     road.setTexture(&textureRoad);
     road.setPosition(Vector2f(0, 620));
 
-        // ПЕРСОНАЖ
+    // Player
     RectangleShape player(Vector2f(100, 100));
     Texture texturePlayer;
-    texturePlayer.loadFromFile("D:/Programming/project5/foto/running.png");
+    texturePlayer.loadFromFile("D:/Programming/project5/foto/run2.png");
     player.setTexture(&texturePlayer);
     player.setPosition(Vector2f(50, 570));
     
-    Clock clock;
-
+    sf::Clock clock;
 
     bool isJumping = false;
     float jumpHeight = 0;
-
-    float playerSpeed = 2.5f;
-
-    //Vector2f pos;
-    //Clock clock;
-    //float time;
-
-    
 
     Coin coin1, coin2, coin3;
     coin1.setPosition(800, 570);
@@ -81,31 +90,26 @@ int main()
 
     while (window.isOpen())
     {
-        sf::Event event;
+        Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed)
+            if (event.type == Event::Closed)
                 window.close();
         }
         
         float time = clock.getElapsedTime().asSeconds();
         
-        // Handle player input
+        
         if (Keyboard::isKeyPressed(Keyboard::Space) && !isJumping)
         {
             isJumping = true;
         } 
 
-
-         //time = clock.getElapsedTime().asSeconds();
-
-
-
         if (time > 0.01)
         {
             clock.restart();
             
-            // Движение фона
+           //движение фона
             gamingBckground.move(Vector2f(-2.5, 0));
             
             if (gamingBckground.getPosition().x <= -1280)
@@ -118,57 +122,78 @@ int main()
             if (gamingBckground2.getPosition().x <= -1280)
             {
                 gamingBckground2.setPosition(1280, 0);
-            }// Make the player jump
-            if (isJumping)
-            {
-                player.move(Vector2f(0, -5));
-                jumpHeight += 5;
-                if (jumpHeight >= 100)
-                {
-                    isJumping = false;
-                    //jumpHeight = 0;
-                    
-                }
-            }
-            else
-            {
-                player.move(Vector2f(0, 5));
-                if (player.getPosition().y >= 570) {
-                    player.setPosition(player.getPosition().x, 570);
-                }
-                player.move(Vector2f(playerSpeed, 0));
-                if (player.getPosition().x >= 1230) {
-                    player.setPosition(50, 570);
-                }
-            }
-            for (int i = 0; i < 3; i++) {
-                if (!coinsArr[i].collected && player.getGlobalBounds().intersects(coinsArr[i].shape.getGlobalBounds())) {
-                    coinsArr[i].collected = true;
-                    // Add any score or effect for collecting the coin here
-                }
-                coinsArr[i].shape.move(Vector2f(-2.5, 0));
-                if (coinsArr[i].shape.getPosition().x <= -30) {
-                    coinsArr[i].setPosition(rand() % 800 + 1280, 570);
-                    coinsArr[i].collected = false;
-                }
             }
         }
         
+        // прыжки
+        if (isJumping)
+        {
+            if (jumpHeight < 100)
+            {
+                player.move(0, -5);
+                jumpHeight += 5;
+            }
+            else
+            {
+                isJumping = false;
+            }
+        }
+        else if (player.getPosition().y < 570)
+        {
+            player.move(0, 5);
+        }
 
+        // собирание монет
+        for (int i = 0; i < 3; i++)
+        {
+            if (!coinsArr[i].collected)
+            {
+                coinsArr[i].shape.move(Vector2f(-2.5, 0));
+            }
+
+            if (player.getGlobalBounds().intersects(coinsArr[i].shape.getGlobalBounds()) && !coinsArr[i].collected)
+            {
+                coinsArr[i].collected = true;
+                coinsCollected++; 
+            }
+        }
+        
         window.clear();
+       
+
+
+
         window.draw(gamingBckground);
         window.draw(gamingBckground2);
         window.draw(road);
         
-        for (int i = 0; i < 3; i++) {
-            if (!coinsArr[i].collected) {
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (!coinsArr[i].collected)
+            {
                 window.draw(coinsArr[i].shape);
             }
         }
         window.draw(player);
+
+
+         // Отображение собранных монет
+        Font font;
+        font.loadFromFile("arial.ttf");
+        Text text;
+        text.setFont(font);
+        text.setString("Coins: " + std::to_string(coinsCollected));
+        text.setCharacterSize(24);
+        text.setFillColor(Color::White);
+        text.setPosition(10, 10);
+
+
+        window.draw(text);
         window.display();
     }
-    
+
     return 0;
 }
+
 
