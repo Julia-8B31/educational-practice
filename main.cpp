@@ -1,199 +1,194 @@
+
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <ctime>
+#include <vector>
+#include <algorithm>
+#include "player.h"
+#include "coins.h"
+#include "background.h"
+#include "road.h"
+#include "obstacle.h"
 
-using namespace sf;
+int main() {
+    // Создание окна
+    sf::RenderWindow window(sf::VideoMode(1280, 720), L"Endless runner");
+    CoinCollector coinCollector;
 
+    // Фоновые изображения
+    Background gamingBackground;
+    Background gamingBackground2;
+    gamingBackground2.shape.setPosition(sf::Vector2f(1280, 0));
 
-class Coin {
-public:
-    RectangleShape shape;
-    Texture textureCoin;
-    bool collected;
+    // Дорога
+    Road road;
 
-    Coin() {
-        shape.setSize(Vector2f(120, 60));
-        textureCoin.loadFromFile("D:/Programming/project5/foto/coinn.png");
-        shape.setTexture(&textureCoin);
-        collected = false;
-    }
+    // Игрок
+    Player player;
 
-    void setPosition(float x, float y) {
-        shape.setPosition(x, y);
-    }
-};
-
-class CoinCollector {
-private:
-    int coinsCollected;
-
-public:
-    CoinCollector() {
-        coinsCollected = 0;
-    }
-
-    void collectCoin() {
-        coinsCollected++;
-    }
-
-    int getCoinsCollected() {
-        return coinsCollected;
-    }
-};
-
-
-
-int main()
-{   
-    RenderWindow window(VideoMode(1280, 720), L"Endless runner");
-    
-    int coinsCollected = 0; // добавление collected coins
-     
-
-    // Background
-    Texture textureSpace;
-    textureSpace.loadFromFile("D:/Programming/project5/foto/sky.png");
-    RectangleShape gamingBckground(Vector2f(1280,720));
-    gamingBckground.setTexture(&textureSpace);
-
-    RectangleShape gamingBckground2(Vector2f(1280,720));
-    gamingBckground2.setTexture(&textureSpace);
-    gamingBckground2.setPosition(Vector2f(1280,0));
-
-    // Road
-    RectangleShape road(Vector2f(1280, 100));
-    Texture textureRoad;
-    textureRoad.loadFromFile("D:/Programming/project5/foto/road.png");
-    road.setTexture(&textureRoad);
-    road.setPosition(Vector2f(0, 620));
-
-    // Player
-    RectangleShape player(Vector2f(100, 100));
-    Texture texturePlayer;
-    texturePlayer.loadFromFile("D:/Programming/project5/foto/run2.png");
-    player.setTexture(&texturePlayer);
-    player.setPosition(Vector2f(50, 570));
-    
     sf::Clock clock;
+    sf::Clock coinClock; // Для добавления новых монет
+    sf::Clock obstacleClock; // Для добавления новых препятствий
 
-    bool isJumping = false;
-    float jumpHeight = 0;
+    std::vector<Coin> coins;
+    std::vector<Obstacle> obstacles;  // Вектор препятствий
 
-    Coin coin1, coin2, coin3;
-    coin1.setPosition(800, 570);
-    coin2.setPosition(1200, 570);
-    coin3.setPosition(1600, 570);
+    // Шрифт для отображения количества монет и сообщения "Game Over"
+    sf::Font font;
+    bool fontLoaded = true;
+    if (!font.loadFromFile("D:/Programming/project5/fonts/arial.ttf")) { // Убедитесь, что путь к шрифту правильный
+        std::cerr << "Error loading font" << std::endl;
+        fontLoaded = false; // Шрифт не загружен, продолжаем выполнение программы
+    } else {
+        std::cout << "Font loaded successfully" << std::endl;
+    }
 
-    Coin coinsArr[] = {coin1, coin2, coin3};
-
-    srand(time(0));
-
-    while (window.isOpen())
-    {
-        Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == Event::Closed)
-                window.close();
-        }
-        
-        float time = clock.getElapsedTime().asSeconds();
-        
-        
-        if (Keyboard::isKeyPressed(Keyboard::Space) && !isJumping)
-        {
-            isJumping = true;
-        } 
-
-        if (time > 0.01)
-        {
-            clock.restart();
-            
-           //движение фона
-            gamingBckground.move(Vector2f(-2.5, 0));
-            
-            if (gamingBckground.getPosition().x <= -1280)
-            {
-                gamingBckground.setPosition(1280, 0);
-            }
-
-            gamingBckground2.move(Vector2f(-2.5, 0));
-
-            if (gamingBckground2.getPosition().x <= -1280)
-            {
-                gamingBckground2.setPosition(1280, 0);
-            }
-        }
-        
-        // прыжки
-        if (isJumping)
-        {
-            if (jumpHeight < 100)
-            {
-                player.move(0, -5);
-                jumpHeight += 5;
-            }
-            else
-            {
-                isJumping = false;
-            }
-        }
-        else if (player.getPosition().y < 570)
-        {
-            player.move(0, 5);
-        }
-
-        // собирание монет
-        for (int i = 0; i < 3; i++)
-        {
-            if (!coinsArr[i].collected)
-            {
-                coinsArr[i].shape.move(Vector2f(-2.5, 0));
-            }
-
-            if (player.getGlobalBounds().intersects(coinsArr[i].shape.getGlobalBounds()) && !coinsArr[i].collected)
-            {
-                coinsArr[i].collected = true;
-                coinsCollected++; 
-            }
-        }
-        
-        window.clear();
-       
-
-
-
-        window.draw(gamingBckground);
-        window.draw(gamingBckground2);
-        window.draw(road);
-        
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (!coinsArr[i].collected)
-            {
-                window.draw(coinsArr[i].shape);
-            }
-        }
-        window.draw(player);
-
-
-         // Отображение собранных монет
-        Font font;
-        font.loadFromFile("arial.ttf");
-        Text text;
+    sf::Text text;
+    if (fontLoaded) {
         text.setFont(font);
-        text.setString("Coins: " + std::to_string(coinsCollected));
         text.setCharacterSize(24);
-        text.setFillColor(Color::White);
+        text.setFillColor(sf::Color::White);
         text.setPosition(10, 10);
+    }
 
+    sf::Text gameOverText;
+    if (fontLoaded) {
+        gameOverText.setFont(font);
+        gameOverText.setCharacterSize(48);
+        gameOverText.setFillColor(sf::Color::Red);
+        gameOverText.setString("Game Over\nPress R to Restart");
+        gameOverText.setPosition(320, 360); // Центрировать текст "Game Over"
+    }
 
-        window.draw(text);
+    srand(static_cast<unsigned>(time(0)));
+
+    bool gameOver = false;
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+            if (gameOver && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::R) {
+                // Перезапуск игры
+                gameOver = false;
+                player.reset(); // Перезапуск игрока
+                coins.clear(); // Очищаем все монеты
+                obstacles.clear(); // Очищаем все препятствия
+                coinCollector.reset(); // Сбрасываем счетчик монет
+                clock.restart(); // Сбрасываем часы
+                coinClock.restart(); // Сбрасываем часы для монет
+                obstacleClock.restart(); // Сбрасываем часы для препятствий
+            }
+        }
+
+        if (!gameOver) {
+            float time = clock.getElapsedTime().asSeconds();
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+                player.jump();
+            }
+
+            if (time > 0.01f) {
+                clock.restart();
+                gamingBackground.update();
+                gamingBackground2.update();
+            }
+
+            player.update();
+
+            // Добавление новых монет
+            if (coinClock.getElapsedTime().asSeconds() > 2) { // Каждые 2 секунды
+                Coin newCoin;
+                newCoin.setPosition(1280, 570);
+                coins.push_back(newCoin);
+                coinClock.restart();
+                std::cout << "New coin added" << std::endl; // Отладочное сообщение
+            }
+
+            // Обновление и сбор монет
+            for (auto& coin : coins) {
+                if (!coin.collected) {
+                    coin.shape.move(sf::Vector2f(-2.5f, 0));
+
+                    if (player.shape.getGlobalBounds().intersects(coin.shape.getGlobalBounds())) {
+                        coin.collected = true;
+                        coinCollector.collectCoin();
+                        std::cout << "Coin collected. Total: " << coinCollector.getCoinsCollected() << std::endl; // Отладочное сообщение
+                    }
+                }
+            }
+
+// Удаление монет, которые вышли за левую границу
+            coins.erase(std::remove_if(coins.begin(), coins.end(),
+                [](const Coin& coin) {
+                    return coin.shape.getPosition().x < -120;
+                }), coins.end());
+
+            // Добавление новых препятствий
+            if (obstacleClock.getElapsedTime().asSeconds() > 3) { // Каждые 3 секунды
+                Obstacle newObstacle;
+                newObstacle.setPosition(1280, 570);
+                obstacles.push_back(newObstacle);
+                obstacleClock.restart();
+                std::cout << "New obstacle added" << std::endl; // Отладочное сообщение
+            }
+
+            // Обновление препятствий
+            for (auto& obstacle : obstacles) {
+                if (!obstacle.passed) {
+                    obstacle.update();
+
+                    if (player.shape.getGlobalBounds().intersects(obstacle.shape.getGlobalBounds())) {
+                        std::cout << "Collision with obstacle!" << std::endl; // Отладочное сообщение
+                        gameOver = true;  // Устанавливаем флаг завершения игры
+                    }
+
+                    if (obstacle.shape.getPosition().x < -50) {
+                        obstacle.passed = true;
+                    }
+                }
+            }
+
+            // Удаление препятствий, которые вышли за левую границу
+            obstacles.erase(std::remove_if(obstacles.begin(), obstacles.end(),
+                [](const Obstacle& obstacle) {
+                    return obstacle.shape.getPosition().x < -50;
+                }), obstacles.end());
+        }
+
+        window.clear();
+        window.draw(gamingBackground.shape);
+        window.draw(gamingBackground2.shape);
+        window.draw(road.shape);
+
+        for (const auto& coin : coins) {
+            if (!coin.collected) {
+                window.draw(coin.shape);
+            }
+        }
+
+        for (const auto& obstacle : obstacles) {
+            if (!obstacle.passed) {
+                window.draw(obstacle.shape);
+            }
+        }
+
+        window.draw(player.shape);
+
+        // Обновление текста с количеством монет
+        if (fontLoaded) {
+            text.setString("Coins: " + std::to_string(coinCollector.getCoinsCollected()));
+            window.draw(text);
+        }
+
+        if (gameOver && fontLoaded) {
+            window.draw(gameOverText);
+        }
+
         window.display();
     }
 
     return 0;
 }
-
-
