@@ -2,7 +2,7 @@
 
 Player::Player() {
     shape.setSize(sf::Vector2f(100, 100));
-    texture.loadFromFile("D:/Programming/project5/foto/run2.png");
+    texture.loadFromFile("foto/run2.png");
     shape.setTexture(&texture);
     shape.setPosition(sf::Vector2f(50, 570));
     isJumping = false;

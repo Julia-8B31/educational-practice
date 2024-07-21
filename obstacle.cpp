@@ -2,7 +2,7 @@
 
 Obstacle::Obstacle() : passed(false) {
     shape.setSize(sf::Vector2f(90, 90));  // Размер препятствия
-    texture.loadFromFile("D:/Programming/project5/foto/preg2.png");
+    texture.loadFromFile("foto/preg2.png");
     shape.setTexture(&texture);
 }
 
